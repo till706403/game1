@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>贪吃蛇 - 终端版</title>
+</head>
+<body>
+    <pre>
+import curses
+import random
+import time
+from curses import KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN
+
+def main(stdscr):
+    # 初始化 curses
+    curses.curs_set(0)
+    stdscr.nodelay(1)
+    stdscr.timeout(150)
+    sh, sw = stdscr.getmaxyx()
+    w = curses.newwin(sh, sw, 0, 0)
+    w.keypad(1)
+    w.border(0)
+    w.nodelay(1)
+    w.timeout(150)
+
+    # 初始化蛇和食物
+    snake = [(sh//2, sw//2), (sh//2, sw//2-1), (sh//2, sw//2-2)]
+    food = (sh//4, sw//4)
+    w.addch(food[0], food[1], '🍎')
+
+    # 初始方向
+    key = KEY_RIGHT
+    score = 0
+
+    while True:
+        w.border(0)
+        w.addstr(0, 2, f"分数: {score} ")
+        w.addstr(0, sw//2 - 4, "贪吃蛇")
+        
+        # 处理按键
+        next_key = w.getch()
+        key = key if next_key == -1 else next_key
+
+        # 计算新头部位置
+        head = snake[0]
+        if key == KEY_UP:
+            new_head = (head[0]-1, head[1])
+        if key == KEY_DOWN:
+            new_head = (head[0]+1, head[1])
+        if key == KEY_LEFT:
+            new_head = (head[0], head[1]-1)
+        if key == KEY_RIGHT:
+            new_head = (head[0], head[1]+1)
+
+        # 插入新头部
+        snake.insert(0, new_head)
+
+        # 检查碰撞
+        if (snake[0][0] == 0 or snake[0][0] == sh-1 or 
+            snake[0][1] == 0 or snake[0][1] == sw-1 or 
+            snake[0] in snake[1:]):
+            w.addstr(sh//2, sw//2 - 5, '游戏结束!')
+            w.addstr(sh//2 + 1, sw//2 - 10, f'最终分数: {score}')
+            w.addstr(sh//2 + 2, sw//2 - 12, '按任意键退出...')
+            w.refresh()
+            time.sleep(2)
+            break
+
+        # 检查是否吃到食物
+        if snake[0] == food:
+            score += 10
+            # 加速
+            w.timeout(max(50, 150 - (score // 10) * 5))
+            # 生成新食物
+            while True:
+                food = (random.randint(1, sh-2), random.randint(1, sw-2))
+                if food not in snake:
+                    break
+            w.addch(food[0], food[1], '🍎')
+        else:
+            # 移除尾部
+            tail = snake.pop()
+            w.addch(tail[0], tail[1], ' ')
+
+        # 绘制蛇头和身体
+        w.addch(snake[0][0], snake[0][1], '■')
+        for segment in snake[1:]:
+            w.addch(segment[0], segment[1], '□')
+
+if __name__ == "__main__":
+    curses.wrapper(main)
+    </pre>
+</body>
+</html>
+    
